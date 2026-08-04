@@ -2,7 +2,7 @@
 
 An ESP32 sketch that combines an **SH1106 OLED**, **BME280** (temperature/humidity/pressure), **MPU6050** (accelerometer/gyro), **MQ7** (analog CO gas sensor), and a **DS3231 RTC** into one button-navigated dashboard — using a **TCA9548A I2C multiplexer** to keep every I2C device electrically isolated on its own channel.
 
-It merges three previously-separate test sketches (`esp32_oled_bme280_only.ino`, `mpu6050_test.ino`, `mq7_sh1106_test.ino`) into a single build.
+
 
 ## Features
 
