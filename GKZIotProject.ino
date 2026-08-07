@@ -30,8 +30,8 @@
 #define TCA_CHANNEL_RTC  3
 
 //  WiFi
-const char* WIFI_SSID     = "uraiya"; //WIFI SSD
-const char* WIFI_PASSWORD = "SingThyEulogy_04"; //WIFI PASSWORD
+const char* WIFI_SSID     = "WIFI SSD"; //WIFI SSD
+const char* WIFI_PASSWORD = "WIFI PASSWORD"; //WIFI PASSWORD
 
 const bool USE_STATIC_IP = true;
 IPAddress STATIC_IP(192, 168, 1, 50);
