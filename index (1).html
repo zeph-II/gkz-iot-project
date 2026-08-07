@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Monitor — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1B2347;
+    --navy-2:#232C58;
+    --blue:#065A82;
+    --teal:#1C7293;
+    --mint:#02C39A;
+    --amber:#E8A33D;
+    --red:#E24C4B;
+    --bg:#F3F6F9;
+    --card:#FFFFFF;
+    --line:#E3E9EE;
+    --text:#1C2530;
+    --muted:#67788A;
+    --muted-2:#94A3B3;
+    --sidebar-w:236px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+
+  .app{
+    display:flex;
+    height:100vh;
+    background:var(--bg);
+  }
+
+  /* ---- sidebar ---- */
+  .sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:linear-gradient(180deg,var(--navy) 0%, var(--navy-2) 100%);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    padding:22px 14px;
+    overflow-y:auto;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 8px 22px;
+    margin-bottom:10px;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;
+    background:var(--mint);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--navy);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;
+  }
+  .brand-text b{display:block;font-size:13.5px;font-weight:700;}
+  .brand-text span{display:block;font-size:10.5px;color:#93A0C9;}
+
+  .nav-group-label{
+    font-size:10px;
+    letter-spacing:1.2px;
+    color:#7783AC;
+    text-transform:uppercase;
+    padding:16px 12px 6px;
+    font-weight:700;
+  }
+  .navitem{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:500;
+    color:#C4CCE6;
+    cursor:pointer;
+    position:relative;
+    transition:background .15s ease, color .15s ease;
+  }
+  .navitem svg{width:17px;height:17px;flex-shrink:0;opacity:.85;}
+  .navitem:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .navitem.active{background:rgba(2,195,154,0.16);color:#fff;}
+  .navitem.active svg{opacity:1;color:var(--mint);}
+  .navitem .badge{
+    margin-left:auto;
+    background:var(--red);
+    color:#fff;
+    font-size:10px;
+    font-weight:700;
+    padding:1px 6px;
+    border-radius:20px;
+  }
+  .sidebar-foot{
+    margin-top:auto;
+    padding:12px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.06);
+    font-size:11.5px;
+    color:#B7C0E0;
+  }
+  .sidebar-foot b{color:#fff;display:block;font-size:12.5px;margin-bottom:2px;}
+
+  /* ---- main ---- */
+  .main{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 28px;
+    border-bottom:1px solid var(--line);
+    background:#fff;
+    flex-shrink:0;
+  }
+  .topbar h2{
+    margin:0;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px;
+    color:var(--navy);
+  }
+  .topbar .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .top-status{display:flex;align-items:center;gap:18px;}
+  .pill{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:600;color:var(--muted);
+    background:#F0F4F7;padding:6px 12px;border-radius:20px;
+  }
+  .pill.ok{color:#0B8F6E;background:#E4F8F1;}
+  .pill.warn{color:#B6790B;background:#FFF4E6;}
+  .pill.off{color:var(--red);background:#FDEAEA;}
+  .pill.off .pulse{background:var(--red);box-shadow:0 0 0 3px rgba(226,76,75,0.25);}
+  .pill .pulse{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 3px rgba(2,195,154,0.25);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+  .content{
+    flex:1;
+    overflow-y:auto;
+    padding:24px 28px 40px;
+  }
+  .alert-banner{
+    display:flex;align-items:center;gap:12px;
+    background:#FFF4E6;border:1px solid #F6D9A8;color:#8A5A00;
+    padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:20px;
+  }
+  .alert-banner b{font-weight:700;}
+  .alert-banner svg{width:18px;height:18px;flex-shrink:0;color:var(--amber);}
+
+  .section-title{
+    font-size:12.5px;font-weight:700;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.8px;
+    margin:26px 0 12px;
+  }
+  .section-title:first-child{margin-top:0;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px,1fr));
+    gap:16px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:13px;
+    padding:16px 16px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .card-icon{
+    width:34px;height:34px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    background:#EAF3F8;color:var(--blue);flex-shrink:0;
+  }
+  .card-icon svg{width:18px;height:18px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+  .status-dot.normal{background:var(--mint);}
+  .status-dot.warn{background:var(--amber);}
+  .status-dot.alert{background:var(--red);}
+
+  .card-loc{font-size:11px;color:var(--muted-2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .card-label{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .card-value{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:28px;font-weight:700;color:var(--navy);
+    display:flex;align-items:baseline;gap:5px;
+    letter-spacing:-.5px;
+    font-variant-numeric:tabular-nums;
+  }
+  .card-value .unit{font-size:13px;font-weight:600;color:var(--muted-2);}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted-2);}
+  .status-text{font-weight:700;}
+  .status-text.normal{color:#0B8F6E;}
+  .status-text.warn{color:#B6790B;}
+  .status-text.alert{color:var(--red);}
+
+  .spark{width:100%;height:34px;display:block;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
+  @media (max-width:1000px){.two-col{grid-template-columns:1fr;}}
+  @media (max-width:760px){
+    .sidebar{width:72px;padding:16px 8px;}
+    .brand-text, .nav-group-label, .navitem span, .sidebar-foot{display:none;}
+    .navitem{justify-content:center;padding:11px;}
+    .navitem .badge{position:absolute;top:2px;right:2px;margin-left:0;}
+  }
+
+  .detail-card{
+    background:var(--card);border:1px solid var(--line);border-radius:13px;padding:20px;
+  }
+  .detail-card h4{margin:0 0 4px;font-size:14px;color:var(--navy);}
+  .detail-card .desc{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  .row-list{display:flex;flex-direction:column;gap:0;}
+  .row-list .r{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .row-list .r:last-child{border-bottom:none;}
+  .row-list .r .k{color:var(--muted);}
+  .row-list .r .v{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;}
+
+  .chart-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:16px;}
+  .chart-card h4{margin:0 0 2px;font-size:13.5px;color:var(--navy);}
+  .chart-card .chart-sub{font-size:11.5px;color:var(--muted);margin-bottom:10px;}
+  .chart-card canvas{width:100%;height:150px;display:block;}
+  .hist-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .hist-toolbar select{
+    font-family:inherit;font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--text);
+  }
+  .btn{
+    font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;
+    border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;
+  }
+  .btn:hover{background:#F0F4F7;}
+  .btn.danger{color:var(--red);border-color:#F3C6C6;}
+  .btn.danger:hover{background:#FDEAEA;}
+  .btn.small{padding:5px 10px;font-size:11.5px;}
+
+  .hist-tooltip{
+    position:fixed;transform:translate(-50%,-100%);pointer-events:none;z-index:999;
+    background:var(--navy);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;
+    border-radius:6px;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.18);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">IoT</div>
+      <div class="brand-text"><b>Site Monitor</b><span>North Wing · Node 01</span></div>
+    </div>
+
+    <div class="nav-group-label">Monitor</div>
+    <div class="navitem active" data-view="overview" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <span>Overview</span>
+    </div>
+    <div class="navitem" data-view="climate" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13.5V4a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z"/></svg>
+      <span>Climate</span>
+    </div>
+    <div class="navitem" data-view="gas" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.5-1.5-2-1-3.5.5 1-2 1.5-2 3Z"/><path d="M12 3c1 3-3 4-3 8a5 5 0 0 0 10 0c0-3.5-2.5-4-3-7-.5 2-1.5 2-1.5.5C14.5 3 13 2 12 3Z"/></svg>
+      <span>Gas Safety</span>
+    </div>
+    <div class="navitem" data-view="motion" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>
+      <span>Motion</span>
+    </div>
+    <div class="navitem" data-view="history" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span>History</span>
+    </div>
+
+    <div class="nav-group-label">System</div>
+    <div class="navitem" data-view="device" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 6h2"/></svg>
+      <span>Device &amp; Network</span>
+    </div>
+    <div class="navitem" data-view="settings" onclick="setView(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      <span>Settings</span>
+    </div>
+
+    <div class="sidebar-foot">
+      <b id="d-ip-footer">Node IP: —</b>
+      <span id="d-heap-footer">Not connected yet</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="d-title">Overview</h2>
+        <div class="sub" id="d-sub">Node 01</div>
+      </div>
+      <div class="top-status">
+        <div class="pill off" id="d-status-pill"><span class="pulse"></span>Connecting…</div>
+        <div class="pill" id="d-updated-pill">Never updated</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="d-overview">
+        <div class="alert-banner" id="ov-alert" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+          <span id="ov-alert-text"></span>
+        </div>
+
+        <div class="section-title">Climate</div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-top"><div class="card-icon">🌡</div><div class="status-dot normal" id="ov-climate-dot"></div></div>
+            <div><div class="card-loc">Node 01</div><div class="card-label">Temperature</div></div>
+            <div class="card-value" id="ov-temp">—<span class="unit">°C</span></div>
+            <div class="card-foot"><span id="ov-hum">Humidity —</span><span class="status-text normal" id="ov-climate-status">—</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Gas Safety</div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-top"><div class="card-icon">☁</div><div class="status-dot normal" id="ov-gas-dot"></div></div>
+            <div><div class="card-loc">Main Enclosure</div><div class="card-label">Carbon monoxide (CO)*</div></div>
+            <div class="card-value" id="ov-co">—<span class="unit">ppm</span></div>
+            <div class="card-foot"><span>Threshold 35 ppm</span><span class="status-text normal" id="ov-gas-status">—</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Motion &amp; Device</div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-top"><div class="card-icon">📈</div><div class="status-dot normal" id="ov-vib-dot"></div></div>
+            <div><div class="card-loc">Node 01</div><div class="card-label">Vibration</div></div>
+            <div class="card-value" id="ov-vib">—<span class="unit">g</span></div>
+            <div class="card-foot"><span>Deviation from rest</span><span class="status-text normal" id="ov-vib-status">—</span></div>
+          </div>
+          <div class="card">
+            <div class="card-top"><div class="card-icon">📶</div><div class="status-dot normal" id="ov-net-dot"></div></div>
+            <div><div class="card-loc">Node 01</div><div class="card-label">Wi-Fi signal</div></div>
+            <div class="card-value" id="ov-rssi">—<span class="unit">dBm</span></div>
+            <div class="card-foot"><span id="ov-uptime">Uptime —</span><span class="status-text normal" id="ov-net-status">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIMATE -->
+      <div class="view" id="d-climate">
+        <div class="section-title">Climate — BME280</div>
+        <div class="two-col">
+          <div class="detail-card">
+            <h4>Node 01</h4>
+            <div class="desc" id="cl-desc">BME280 · not connected yet</div>
+            <div class="row-list">
+              <div class="r"><span class="k">Temperature</span><span class="v" id="cl-temp">— °C</span></div>
+              <div class="r"><span class="k">Humidity</span><span class="v" id="cl-hum">— %RH</span></div>
+              <div class="r"><span class="k">Pressure</span><span class="v" id="cl-pres">— hPa</span></div>
+              <div class="r"><span class="k">Status</span><span class="v status-text normal" id="cl-status">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAS -->
+      <div class="view" id="d-gas">
+        <div class="section-title">Gas presence — MQ7</div>
+        <div class="two-col">
+          <div class="detail-card">
+            <h4>Carbon Monoxide (CO)</h4>
+            <div class="desc" id="gas-desc">MQ7 · Main Enclosure · not connected yet</div>
+            <div class="row-list">
+              <div class="r"><span class="k">Current reading (estimate)*</span><span class="v" id="gas-ppm">— ppm</span></div>
+              <div class="r"><span class="k">Sensor voltage</span><span class="v" id="gas-voltage">— V</span></div>
+              <div class="r"><span class="k">Caution threshold</span><span class="v">35 ppm</span></div>
+              <div class="r"><span class="k">Alarm threshold</span><span class="v">100 ppm</span></div>
+              <div class="r"><span class="k">Status</span><span class="v status-text normal" id="gas-status">—</span></div>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h4>* About this reading</h4>
+            <div class="desc">The MQ7 reports a resistance ratio, not ppm directly. This value is an uncalibrated estimate from the datasheet curve — run a burn-in and clean-air calibration before treating it as accurate.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOTION -->
+      <div class="view" id="d-motion">
+        <div class="section-title">Motion &amp; vibration — MPU6050</div>
+        <div class="two-col">
+          <div class="detail-card">
+            <h4>Node 01</h4>
+            <div class="desc" id="mo-desc">MPU6050 · not connected yet</div>
+            <div class="row-list">
+              <div class="r"><span class="k">Vibration (deviation from rest)</span><span class="v" id="mo-vib">— g</span></div>
+              <div class="r"><span class="k">Status</span><span class="v status-text normal" id="mo-status">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="view" id="d-history">
+        <div class="section-title">Logged history — from the ESP32's on-flash database</div>
+        <div class="hist-toolbar">
+          <select id="hist-range" onchange="loadHistory()">
+            <option value="60">Last 60 readings</option>
+            <option value="200" selected>Last 200 readings</option>
+            <option value="1000">All stored readings</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" onclick="loadHistory()">Refresh</button>
+            <a class="btn" id="hist-download" href="#" target="_blank" rel="noopener">Download CSV</a>
+            <button class="btn danger" onclick="clearHistory()">Clear log</button>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h4>Temperature</h4>
+          <div class="chart-sub">°C over time · BME280</div>
+          <canvas id="chart-temp"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4>CO estimate</h4>
+          <div class="chart-sub">ppm over time · MQ7 (uncalibrated)</div>
+          <canvas id="chart-co"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4>Vibration</h4>
+          <div class="chart-sub">g, deviation from rest · MPU6050</div>
+          <canvas id="chart-vib"></canvas>
+        </div>
+        <div class="chart-sub" id="hist-status">Loading history…</div>
+      </div>
+
+      <!-- DEVICE -->
+      <div class="view" id="d-device">
+        <div class="section-title">Device &amp; network</div>
+        <div class="two-col">
+          <div class="detail-card">
+            <h4>Node 01</h4>
+            <div class="desc">ESP32 · sensor board over TCA9548A I2C mux</div>
+            <div class="row-list">
+              <div class="r"><span class="k">Wi-Fi</span><span class="v" id="dev-wifi">Not connected</span></div>
+              <div class="r"><span class="k">IP address</span><span class="v" id="dev-ip">—</span></div>
+              <div class="r"><span class="k">Signal (RSSI)</span><span class="v" id="dev-rssi">— dBm</span></div>
+              <div class="r"><span class="k">Uptime</span><span class="v" id="dev-uptime">—</span></div>
+              <div class="r"><span class="k">Free heap</span><span class="v" id="dev-heap">—</span></div>
+              <div class="r"><span class="k">RTC</span><span class="v" id="dev-rtc">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="d-settings">
+        <div class="section-title">Settings</div>
+        <div class="two-col">
+          <div class="detail-card">
+            <h4>Dashboard connection</h4>
+            <div class="desc">This dashboard polls the ESP32's built-in <code>/api/sensors</code> endpoint directly — no cloud service required.</div>
+            <div class="row-list">
+              <div class="r"><span class="k">API base URL</span><span class="v" id="set-api-base">—</span></div>
+              <div class="r"><span class="k">Device name</span><span class="v">Node 01</span></div>
+            </div>
+            <div class="desc" style="margin-top:14px;">To point this dashboard at your device, open this file and edit the <code>API_BASE</code> constant near the top of the <code>&lt;script&gt;</code> block to your ESP32's IP address (shown on its Network OLED page or in the Serial Monitor at boot).</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Set this to your ESP32's IP address, e.g. 'http://192.168.1.50'.
+  // Find the IP on the device's Network OLED page or the Serial Monitor
+  // at boot. Leave as '' if this dashboard is being served BY the ESP32
+  // itself (same-origin).
+  const API_BASE = 'http://192.168.1.50';
+  const POLL_MS = 3000;
+
+  const titles = {
+    overview:{t:"Overview", s:"Node 01"},
+    climate:{t:"Climate", s:"Temperature, humidity & pressure"},
+    gas:{t:"Gas Safety", s:"Carbon monoxide (MQ7)"},
+    motion:{t:"Motion", s:"Vibration monitoring"},
+    history:{t:"History", s:"Logged readings from the ESP32's on-flash database"},
+    device:{t:"Device & Network", s:"Node status and connectivity"},
+    settings:{t:"Settings", s:"Dashboard connection"}
+  };
+
+  function setView(el){
+    const view = el.getAttribute('data-view');
+    document.querySelectorAll('.sidebar .navitem').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+
+    document.querySelectorAll('.main .view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById('d-' + view);
+    if(target) target.classList.add('active');
+
+    const info = titles[view] || {t:view, s:""};
+    document.getElementById('d-title').textContent = info.t;
+    document.getElementById('d-sub').textContent = info.s;
+
+    if (view === 'history') loadHistory();
+  }
+
+  document.getElementById('set-api-base').textContent = API_BASE || '(same origin)';
+  document.getElementById('hist-download').href = `${API_BASE}/api/history/csv`;
+
+  function fmtUptime(totalSeconds){
+    const d = Math.floor(totalSeconds / 86400);
+    const h = Math.floor((totalSeconds % 86400) / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+
+  function setStatus(dotEl, textEl, level, label){
+    if(dotEl) dotEl.className = 'status-dot ' + level;
+    if(textEl){ textEl.className = 'status-text ' + level; textEl.textContent = label; }
+  }
+
+  function applyData(data){
+    const env = data.env, imu = data.imu, gas = data.gas, dev = data.device;
+
+    // ---- Climate ----
+    if (env.available){
+      document.getElementById('ov-temp').innerHTML = env.tempC.toFixed(1) + '<span class="unit">°C</span>';
+      document.getElementById('ov-hum').textContent = 'Humidity ' + env.humidity.toFixed(0) + '%';
+      document.getElementById('cl-temp').textContent = env.tempC.toFixed(1) + ' °C';
+      document.getElementById('cl-hum').textContent = env.humidity.toFixed(1) + ' %RH';
+      document.getElementById('cl-pres').textContent = env.pressureHpa.toFixed(1) + ' hPa';
+      document.getElementById('cl-desc').textContent = 'BME280 · live';
+      setStatus(document.getElementById('ov-climate-dot'), document.getElementById('ov-climate-status'), 'normal', 'Normal');
+      setStatus(null, document.getElementById('cl-status'), 'normal', 'Normal');
+    } else {
+      document.getElementById('cl-desc').textContent = 'BME280 not found on this node';
+      setStatus(document.getElementById('ov-climate-dot'), document.getElementById('ov-climate-status'), 'warn', 'No sensor');
+      setStatus(null, document.getElementById('cl-status'), 'warn', 'No sensor');
+    }
+
+    // ---- Gas (CO, uncalibrated estimate) ----
+    const coLevel = gas.coPpmEstimate >= 100 ? 'alert' : gas.coPpmEstimate >= 35 ? 'warn' : 'normal';
+    const coLabel = coLevel === 'alert' ? 'Alarm' : coLevel === 'warn' ? 'Caution' : 'Normal';
+    document.getElementById('ov-co').innerHTML = gas.coPpmEstimate.toFixed(0) + '<span class="unit">ppm</span>';
+    document.getElementById('gas-ppm').textContent = gas.coPpmEstimate.toFixed(1) + ' ppm';
+    document.getElementById('gas-voltage').textContent = gas.voltageV.toFixed(3) + ' V';
+    document.getElementById('gas-desc').textContent = 'MQ7 · Main Enclosure · live (uncalibrated)';
+    setStatus(document.getElementById('ov-gas-dot'), document.getElementById('ov-gas-status'), coLevel, coLabel);
+    setStatus(null, document.getElementById('gas-status'), coLevel, coLabel);
+
+    const alertBanner = document.getElementById('ov-alert');
+    if (coLevel !== 'normal'){
+      document.getElementById('ov-alert-text').innerHTML = `<b>CO ${coLabel.toLowerCase()}</b> — Main Enclosure, ~${gas.coPpmEstimate.toFixed(0)} ppm (uncalibrated estimate)`;
+      alertBanner.style.display = 'flex';
+    } else {
+      alertBanner.style.display = 'none';
+    }
+
+    // ---- Motion ----
+    if (imu.available){
+      const vibLevel = imu.vibrationG > 0.3 ? 'warn' : 'normal';
+      document.getElementById('ov-vib').innerHTML = imu.vibrationG.toFixed(2) + '<span class="unit">g</span>';
+      document.getElementById('mo-vib').textContent = imu.vibrationG.toFixed(3) + ' g';
+      document.getElementById('mo-desc').textContent = 'MPU6050 · live';
+      setStatus(document.getElementById('ov-vib-dot'), document.getElementById('ov-vib-status'), vibLevel, vibLevel === 'warn' ? 'Elevated' : 'Stable');
+      setStatus(null, document.getElementById('mo-status'), vibLevel, vibLevel === 'warn' ? 'Elevated' : 'Stable');
+    } else {
+      document.getElementById('mo-desc').textContent = 'MPU6050 not found on this node';
+      setStatus(document.getElementById('ov-vib-dot'), document.getElementById('ov-vib-status'), 'warn', 'No sensor');
+      setStatus(null, document.getElementById('mo-status'), 'warn', 'No sensor');
+    }
+
+    // ---- Device / network ----
+    document.getElementById('ov-rssi').innerHTML = dev.wifiRssiDbm + '<span class="unit">dBm</span>';
+    document.getElementById('ov-uptime').textContent = 'Uptime ' + fmtUptime(dev.uptimeS);
+    setStatus(document.getElementById('ov-net-dot'), document.getElementById('ov-net-status'), 'normal', 'Connected');
+    document.getElementById('dev-wifi').textContent = 'Connected';
+    document.getElementById('dev-ip').textContent = dev.ip;
+    document.getElementById('dev-rssi').textContent = dev.wifiRssiDbm + ' dBm';
+    document.getElementById('dev-uptime').textContent = fmtUptime(dev.uptimeS);
+    document.getElementById('dev-heap').textContent = (dev.freeHeapBytes / 1024).toFixed(0) + ' KB';
+    document.getElementById('dev-rtc').textContent = data.time.available ? data.time.iso.replace('T',' ') : 'Not found';
+
+    document.getElementById('d-ip-footer').textContent = 'Node IP: ' + dev.ip;
+    document.getElementById('d-heap-footer').textContent = 'Uptime ' + fmtUptime(dev.uptimeS);
+
+    const statusPill = document.getElementById('d-status-pill');
+    statusPill.className = 'pill ok';
+    statusPill.innerHTML = '<span class="pulse"></span>Online';
+    document.getElementById('d-updated-pill').textContent = 'Updated just now';
+  }
+
+  function setOffline(){
+    const statusPill = document.getElementById('d-status-pill');
+    statusPill.className = 'pill off';
+    statusPill.innerHTML = '<span class="pulse"></span>Offline';
+    document.getElementById('d-updated-pill').textContent = 'Check API_BASE / device power';
+    document.getElementById('dev-wifi').textContent = 'Not connected';
+  }
+
+  async function refreshData(){
+    try {
+      const res = await fetch(`${API_BASE}/api/sensors`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      applyData(data);
+    } catch (err) {
+      setOffline();
+    }
+  }
+
+  // ---- History (reads the ESP32's on-flash "database" via /api/history) ----
+
+  function formatTs(ts){
+    if (!ts) return '—';
+    const d = new Date(ts.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return ts;
+    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  function formatTsShort(ts){
+    if (!ts) return '—';
+    const d = new Date(ts.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+  }
+
+  const histTooltip = document.createElement('div');
+  histTooltip.className = 'hist-tooltip';
+  histTooltip.style.display = 'none';
+  document.body.appendChild(histTooltip);
+
+  // Minimal dependency-free line chart, drawn straight onto a canvas.
+  // rows: array of {ts, ...}. field: which property to plot.
+  function drawLineChart(canvas, rows, field, color){
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth || 600, h = canvas.clientHeight || 150;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+
+    const points = rows.map(r => r[field]);
+    const axisPad = 16; // extra bottom room for the time labels
+    const pad = 8;
+
+    // Stash for the shared hover handler below.
+    canvas._chartRows = rows;
+    canvas._chartField = field;
+    canvas._chartLayout = { w, h, pad, axisPad };
+
+    if (!points.length){
+      ctx.fillStyle = '#94A3B3'; ctx.font = '12px Inter, sans-serif';
+      ctx.fillText('No history yet', 8, h/2);
+      return;
+    }
+
+    const min = Math.min(...points), max = Math.max(...points);
+    const range = (max - min) || 1;
+    const plotH = h - pad - axisPad;
+    const stepX = (w - pad*2) / Math.max(points.length - 1, 1);
+
+    ctx.strokeStyle = '#EEF2F5'; ctx.lineWidth = 1;
+    for (let i=0;i<=3;i++){
+      const y = pad + plotH * (i/3);
+      ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke();
+    }
+
+    ctx.beginPath();
+    points.forEach((v,i)=>{
+      const x = pad + i*stepX;
+      const y = pad + plotH * (1 - (v - min)/range);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+
+    ctx.fillStyle = '#94A3B3'; ctx.font = '10.5px Inter, sans-serif';
+    ctx.fillText(min.toFixed(1), pad, pad + plotH - 2);
+    ctx.textAlign = 'right';
+    ctx.fillText(max.toFixed(1), w - pad, 10);
+    ctx.textAlign = 'left';
+
+    // X-axis timestamps: oldest (left), newest (right), and a midpoint.
+    const ts0 = formatTsShort(rows[0].ts);
+    const ts1 = formatTsShort(rows[rows.length-1].ts);
+    const yAxis = h - 4;
+    ctx.fillStyle = '#B8C2CC'; ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(ts0, pad, yAxis);
+    ctx.textAlign = 'right';
+    ctx.fillText(ts1, w - pad, yAxis);
+    if (rows.length > 2) {
+      const mid = rows[Math.floor(rows.length/2)];
+      ctx.textAlign = 'center';
+      ctx.fillText(formatTsShort(mid.ts), w/2, yAxis);
+    }
+    ctx.textAlign = 'left';
+
+    if (!canvas._hoverBound) {
+      canvas._hoverBound = true;
+      const showAt = (clientX, clientY) => {
+        const rows = canvas._chartRows, field = canvas._chartField, L = canvas._chartLayout;
+        if (!rows || !rows.length || !L) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const stepX2 = (L.w - L.pad*2) / Math.max(rows.length - 1, 1);
+        let idx = Math.round((x - L.pad) / stepX2);
+        idx = Math.max(0, Math.min(rows.length - 1, idx));
+        const row = rows[idx];
+        histTooltip.textContent = `${formatTs(row.ts)} — ${row[field]}`;
+        histTooltip.style.left = clientX + 'px';
+        histTooltip.style.top = clientY + 'px';
+        histTooltip.style.display = 'block';
+      };
+      canvas.addEventListener('mousemove', e => showAt(e.clientX, e.clientY));
+      canvas.addEventListener('mouseleave', () => histTooltip.style.display = 'none');
+      canvas.addEventListener('touchstart', e => { const t=e.touches[0]; showAt(t.clientX, t.clientY); }, {passive:true});
+      canvas.addEventListener('touchmove', e => { const t=e.touches[0]; showAt(t.clientX, t.clientY); }, {passive:true});
+      canvas.addEventListener('touchend', () => setTimeout(()=>histTooltip.style.display='none', 1500));
+    }
+  }
+
+  async function loadHistory(){
+    const limit = document.getElementById('hist-range').value;
+    const statusEl = document.getElementById('hist-status');
+    statusEl.textContent = 'Loading history…';
+    try {
+      const res = await fetch(`${API_BASE}/api/history?limit=${limit}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      const rows = data.rows || [];
+      drawLineChart(document.getElementById('chart-temp'), rows, 'tempC', '#065A82');
+      drawLineChart(document.getElementById('chart-co'), rows, 'coPpm', '#E8A33D');
+      drawLineChart(document.getElementById('chart-vib'), rows, 'vibrationG', '#02C39A');
+      const lastTs = rows.length ? formatTs(rows[rows.length-1].ts) : null;
+      statusEl.textContent = rows.length
+        ? `${rows.length} logged reading(s) · oldest first · last logged ${lastTs}`
+        : 'No readings logged yet — the device logs one row per minute.';
+    } catch (err) {
+      statusEl.textContent = 'Could not load history — check API_BASE / device power.';
+    }
+  }
+
+  async function clearHistory(){
+    if (!confirm('Clear all logged history on the device? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/history/clear`, { method: 'POST' });
+      if (!res.ok) throw new Error('bad response');
+      loadHistory();
+    } catch (err) {
+      alert('Could not clear history — check API_BASE / device power.');
+    }
+  }
+
+  setInterval(refreshData, POLL_MS);
+  refreshData();
+</script>
+
+</body>
+</html>
