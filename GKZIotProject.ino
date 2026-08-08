@@ -15,7 +15,7 @@
 //  OLED 
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1 
+#define OLED_RESET    -1     // No dedicated reset pin on these modules
 #define I2C_ADDRESS   0x3C   
 
 //  I2C pins 
@@ -29,7 +29,7 @@
 #define TCA_CHANNEL_MPU  2
 #define TCA_CHANNEL_RTC  3
 
-//  WiFi
+//  WiFi (for the dashboards' REST API) 
 const char* WIFI_SSID     = "WIFI SSD"; //WIFI SSD
 const char* WIFI_PASSWORD = "WIFI PASSWORD"; //WIFI PASSWORD
 
@@ -45,14 +45,15 @@ WebServer server(80);
 const char* HISTORY_FILE      = "/history.csv";
 const char* HISTORY_FILE_OLD  = "/history_old.csv";
 const char* HISTORY_HEADER    = "ts,tempC,humidity,pressureHpa,coPpm,voltageV,vibrationG,uptimeS\n";
-const int   MAX_ROWS_PER_FILE = 500;   // ~500 rows/file, 2 files = up to ~1000 rows of history
-const unsigned long LOG_INTERVAL_MS   = 60000; 
-const unsigned long SAMPLE_INTERVAL_MS = 1000;
+const int   MAX_ROWS_PER_FILE = 500;
+const unsigned long LOG_INTERVAL_MS   = 60000;
+const unsigned long SAMPLE_INTERVAL_MS = 2000;
 int historyRowCount = 0; 
+bool fsOK = false; // true once LittleFS mounts successfully
 
 const float MQ7_RL_OHMS  = 10000.0;  
 const float MQ7_RO_OHMS  = 10000.0;
-const float MQ7_CURVE_M  = -1.5; 
+const float MQ7_CURVE_M  = -1.5;
 const float MQ7_CURVE_B  = 0.53;
 
 //  Live sensor cache 
@@ -432,6 +433,17 @@ void setupWebServer() {
   server.on("/api/history/csv", HTTP_GET, handleApiHistoryCsv);
   server.on("/api/history/clear", HTTP_POST, handleApiHistoryClear);
   server.on("/api/history/clear", HTTP_OPTIONS, handleOptions);
+
+  if (fsOK) {
+    server.serveStatic("/", LittleFS, "/www/mobile.html");
+    server.serveStatic("/mobile.html", LittleFS, "/www/mobile.html");
+    server.serveStatic("/index.html", LittleFS, "/www/index.html");
+    server.serveStatic("/manifest.json", LittleFS, "/www/manifest.json");
+    server.serveStatic("/service-worker.js", LittleFS, "/www/service-worker.js");
+    server.serveStatic("/icon-192.png", LittleFS, "/www/icon-192.png");
+    server.serveStatic("/icon-512.png", LittleFS, "/www/icon-512.png");
+  }
+
   server.onNotFound(handleNotFound);
   server.begin();
   Serial.println("[HTTP] API server started on port 80");
@@ -648,14 +660,19 @@ void setup() {
   display.display();
   delay(3000);
 
-  // ADDED: WiFi + on-flash database + REST API
+  // WiFi + on-flash database + REST API
   setupWiFi();
 
   if (!LittleFS.begin(true)) { // true = format on mount failure (e.g. first boot)
     Serial.println("[DB] LittleFS mount failed - check Partition Scheme includes SPIFFS/LittleFS space");
   } else {
+    fsOK = true;
     Serial.println("[DB] LittleFS mounted");
     initHistoryLog();
+    if (!LittleFS.exists("/www/mobile.html")) {
+      Serial.println("[HTTP] /www/mobile.html not found on flash - dashboard files haven't been uploaded yet");
+      Serial.println("[HTTP] Upload the 'data' folder to LittleFS via the IDE's filesystem uploader, then reboot");
+    }
   }
 
   setupWebServer();
