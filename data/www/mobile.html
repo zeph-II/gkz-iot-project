@@ -354,14 +354,9 @@
   </div>
 
 <script>
-  // Default address if nothing has been saved yet. Can be changed at
-  // runtime from the Settings screen (gear icon) — that value is
-  // stored in the browser's localStorage and takes over from here.
   const DEFAULT_API_BASE = '';
   let API_BASE = localStorage.getItem('esp32_api_base') || DEFAULT_API_BASE;
-  // Only needed when API_BASE points at the cloud relay server instead
-  // of the ESP32 directly - the ESP32 ignores this header entirely, so
-  // it's harmless to leave set even when talking to it locally.
+
   let CLOUD_API_KEY = localStorage.getItem('cloud_api_key') || '';
   const POLL_MS = 3000;
 
@@ -390,8 +385,6 @@
     if (view === 'history') loadHistory();
   }
 
-  // The Settings screen isn't one of the bottom tabs, so it gets its
-  // own small navigation function rather than going through setView().
   function openSettings(){
     document.querySelectorAll('.m-tabbar .m-tab').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.m-content .m-view').forEach(v => v.classList.remove('active'));
@@ -452,7 +445,7 @@
   function applyData(data){
     const env = data.env, imu = data.imu, gas = data.gas, dev = data.device;
 
-    // ---- Climate ----
+    // Climate 
     if (env.available){
       document.getElementById('ov-temp').innerHTML = env.tempC.toFixed(1) + '<span class="unit">°C</span>';
       document.getElementById('ov-hum').innerHTML = env.humidity.toFixed(1) + '<span class="unit">%RH</span>';
@@ -474,7 +467,7 @@
       setStatus(document.getElementById('ov-hum-dot'), document.getElementById('ov-hum-t'), 'warn', 'No sensor');
     }
 
-    // ---- Gas (CO, uncalibrated estimate) ----
+    // Gas (CO, uncalibrated estimate)
     const coLevel = gas.coPpmEstimate >= 100 ? 'alert' : gas.coPpmEstimate >= 35 ? 'warn' : 'normal';
     const coLabel = coLevel === 'alert' ? 'Alarm' : coLevel === 'warn' ? 'Caution' : 'Normal';
     document.getElementById('ov-co').innerHTML = gas.coPpmEstimate.toFixed(0) + '<span class="unit">ppm</span>';
@@ -492,7 +485,7 @@
       alertBanner.style.display = 'none';
     }
 
-    // ---- Motion ----
+    // Motion
     if (imu.available){
       const vibLevel = imu.vibrationG > 0.3 ? 'warn' : 'normal';
       document.getElementById('ov-vib').innerHTML = imu.vibrationG.toFixed(2) + '<span class="unit">g</span>';
@@ -506,7 +499,7 @@
       setStatus(document.getElementById('mo-dot'), document.getElementById('mo-t'), 'warn', 'No sensor');
     }
 
-    // ---- Device / network ----
+    // Device / network
     document.getElementById('ov-rssi').innerHTML = dev.wifiRssiDbm + '<span class="unit">dBm</span>';
     document.getElementById('ov-uptime').textContent = 'Uptime ' + fmtUptime(dev.uptimeS);
     setStatus(document.getElementById('ov-net-dot'), document.getElementById('ov-net-t'), 'normal', 'Connected');
@@ -538,7 +531,7 @@
     }
   }
 
-  // ---- History (reads the ESP32's on-flash "database" via /api/history) ----
+  // History (reads the ESP32's on-flash "database" via /api/history)
 
   function formatTs(ts){
     if (!ts) return '—';
@@ -669,8 +662,6 @@
 </script>
 
 <script>
-  // Registers the service worker so this page qualifies as an
-  // installable PWA (required by PWABuilder to generate an APK).
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
