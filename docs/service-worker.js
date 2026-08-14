@@ -1,7 +1,4 @@
-// Minimal service worker - required for PWA installability.
-// Caches the app shell so the dashboard's layout still loads if the
-// network briefly drops; live sensor data always comes fresh from
-// the ESP32 and is never cached here.
+
 const CACHE_NAME = 'sensor-dashboard-v1';
 const APP_SHELL = ['./mobile.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
