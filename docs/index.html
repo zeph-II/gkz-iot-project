@@ -37,7 +37,7 @@
     background:var(--bg);
   }
 
-  /* ---- sidebar ---- */
+  /* sidebar */
   .sidebar{
     width:var(--sidebar-w);
     flex-shrink:0;
@@ -109,7 +109,7 @@
   }
   .sidebar-foot b{color:#fff;display:block;font-size:12.5px;margin-bottom:2px;}
 
-  /* ---- main ---- */
+  /* main */
   .main{
     flex:1;
     min-width:0;
@@ -528,14 +528,9 @@
 </div>
 
 <script>
-  // Default address if nothing has been saved yet. Editable at runtime
-  // from Settings (this value is stored in the browser's localStorage
-  // and takes over from here).
   const DEFAULT_API_BASE = 'https://your-service.onrender.com'; // set to your deployed cloud-server URL
   let API_BASE = localStorage.getItem('esp32_api_base') || DEFAULT_API_BASE;
-  // Only used when API_BASE points at the cloud relay server instead
-  // of the ESP32 directly - the ESP32 ignores this header entirely, so
-  // it's harmless to leave set even when talking to it locally.
+
   let CLOUD_API_KEY = localStorage.getItem('cloud_api_key') || '';
   const POLL_MS = 3000;
 
@@ -620,7 +615,7 @@
   function applyData(data){
     const env = data.env, imu = data.imu, gas = data.gas, dev = data.device;
 
-    // ---- Climate ----
+    // Climate
     if (env.available){
       document.getElementById('ov-temp').innerHTML = env.tempC.toFixed(1) + '<span class="unit">°C</span>';
       document.getElementById('ov-hum').innerHTML = env.humidity.toFixed(1) + '<span class="unit">%RH</span>';
@@ -642,7 +637,7 @@
       setStatus(document.getElementById('ov-hum-dot'), document.getElementById('ov-hum-status'), 'warn', 'No sensor');
     }
 
-    // ---- Gas (CO, uncalibrated estimate) ----
+    // Gas (CO, uncalibrated estimate)
     const coLevel = gas.coPpmEstimate >= 100 ? 'alert' : gas.coPpmEstimate >= 35 ? 'warn' : 'normal';
     const coLabel = coLevel === 'alert' ? 'Alarm' : coLevel === 'warn' ? 'Caution' : 'Normal';
     document.getElementById('ov-co').innerHTML = gas.coPpmEstimate.toFixed(0) + '<span class="unit">ppm</span>';
@@ -660,7 +655,7 @@
       alertBanner.style.display = 'none';
     }
 
-    // ---- Motion ----
+    // Motion
     if (imu.available){
       const vibLevel = imu.vibrationG > 0.3 ? 'warn' : 'normal';
       document.getElementById('ov-vib').innerHTML = imu.vibrationG.toFixed(2) + '<span class="unit">g</span>';
@@ -674,7 +669,7 @@
       setStatus(null, document.getElementById('mo-status'), 'warn', 'No sensor');
     }
 
-    // ---- Device / network ----
+    // Device / network
     document.getElementById('ov-rssi').innerHTML = dev.wifiRssiDbm + '<span class="unit">dBm</span>';
     document.getElementById('ov-uptime').textContent = 'Uptime ' + fmtUptime(dev.uptimeS);
     setStatus(document.getElementById('ov-net-dot'), document.getElementById('ov-net-status'), 'normal', 'Connected');
@@ -713,7 +708,7 @@
     }
   }
 
-  // ---- History (reads the ESP32's on-flash "database" via /api/history) ----
+  // History (reads the ESP32's on-flash "database" via /api/history)
 
   function formatTs(ts){
     if (!ts) return '—';
@@ -733,8 +728,6 @@
   histTooltip.style.display = 'none';
   document.body.appendChild(histTooltip);
 
-  // Minimal dependency-free line chart, drawn straight onto a canvas.
-  // rows: array of {ts, ...}. field: which property to plot.
   function drawLineChart(canvas, rows, field, color){
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth || 600, h = canvas.clientHeight || 150;
@@ -747,7 +740,6 @@
     const axisPad = 16; // extra bottom room for the time labels
     const pad = 8;
 
-    // Stash for the shared hover handler below.
     canvas._chartRows = rows;
     canvas._chartField = field;
     canvas._chartLayout = { w, h, pad, axisPad };
