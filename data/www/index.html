@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Site Monitor — Dashboard</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#065A82">
+<link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -37,7 +40,7 @@
     background:var(--bg);
   }
 
-  /* sidebar */
+  /* ---- sidebar ---- */
   .sidebar{
     width:var(--sidebar-w);
     flex-shrink:0;
@@ -215,6 +218,7 @@
 
   .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
   @media (max-width:1000px){.two-col{grid-template-columns:1fr;}}
+  .stack-col{display:flex;flex-direction:column;gap:16px;max-width:560px;}
   @media (max-width:760px){
     .sidebar{width:72px;padding:16px 8px;}
     .brand-text, .nav-group-label, .navitem span, .sidebar-foot{display:none;}
@@ -262,6 +266,19 @@
   }
   .settings-row{display:flex;gap:8px;margin-top:14px;}
   .settings-status{font-size:12px;color:var(--muted);margin-top:8px;min-height:16px;}
+
+  .range-grid{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  .range-row{display:flex;align-items:center;gap:8px;}
+  .range-label{flex:1;font-size:12.5px;color:var(--text);}
+  .range-row input{
+    width:64px;font-family:inherit;font-size:13px;padding:7px 8px;border-radius:7px;
+    border:1px solid var(--line);background:#fff;color:var(--text);box-sizing:border-box;text-align:right;
+  }
+  .range-to{font-size:11.5px;color:var(--muted);}
+
+  .notif-toggle-row{margin-top:12px;}
+  .notif-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;}
+  .notif-toggle input{width:16px;height:16px;accent-color:var(--teal);cursor:pointer;}
 
   .hist-tooltip{
     position:fixed;transform:translate(-50%,-100%);pointer-events:none;z-index:999;
@@ -499,7 +516,7 @@
       <!-- SETTINGS -->
       <div class="view" id="d-settings">
         <div class="section-title">Settings</div>
-        <div class="two-col">
+        <div class="stack-col">
           <div class="detail-card">
             <h4>Dashboard connection</h4>
             <div class="desc">Talking directly to the ESP32 on your WiFi? Just set its address below. Talking to the cloud relay instead (for access from anywhere)? Set the address to that server's URL and fill in its API key too.</div>
@@ -520,6 +537,93 @@
               <div class="r"><span class="k">Device name</span><span class="v">Node 01</span></div>
             </div>
           </div>
+
+          <div class="detail-card">
+            <h4>Chart ranges</h4>
+            <div class="desc">Fixed Y-axis scale for each History chart, so the line reflects real magnitude instead of auto-fitting to whatever's currently on screen.</div>
+            <div class="range-grid">
+              <div class="range-row">
+                <span class="range-label">Temperature (°C)</span>
+                <input type="number" id="range-temp-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="range-temp-max" step="any">
+              </div>
+              <div class="range-row">
+                <span class="range-label">Humidity (%RH)</span>
+                <input type="number" id="range-hum-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="range-hum-max" step="any">
+              </div>
+              <div class="range-row">
+                <span class="range-label">CO estimate (ppm)</span>
+                <input type="number" id="range-co-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="range-co-max" step="any">
+              </div>
+              <div class="range-row">
+                <span class="range-label">Vibration (g)</span>
+                <input type="number" id="range-vib-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="range-vib-max" step="any">
+              </div>
+            </div>
+            <div class="settings-row">
+              <button class="btn" onclick="saveChartRanges()">Save ranges</button>
+              <button class="btn" onclick="resetChartRanges()">Reset to default</button>
+            </div>
+            <div class="settings-status" id="range-status"></div>
+          </div>
+
+          <div class="detail-card">
+            <h4>Notifications</h4>
+            <div class="desc">Get alerted when a reading crosses a threshold — once when it goes out of range, once when it returns to normal. Each channel below is optional and independent.</div>
+
+            <div class="notif-toggle-row">
+              <label class="notif-toggle"><input type="checkbox" id="notif-browser-enabled"> Browser / mobile pop-up notifications</label>
+            </div>
+            <div class="notif-toggle-row">
+              <label class="notif-toggle"><input type="checkbox" id="notif-telegram-enabled"> Telegram notifications</label>
+            </div>
+
+            <div class="settings-field" style="margin-top:14px;">
+              <label>Telegram bot token</label>
+              <input type="text" id="notif-telegram-token" placeholder="123456789:AAExampleTokenHere" autocapitalize="off" autocorrect="off" spellcheck="false">
+            </div>
+            <div class="settings-field" style="margin-top:10px;">
+              <label>Telegram chat ID</label>
+              <input type="text" id="notif-telegram-chatid" placeholder="e.g. 987654321" autocapitalize="off" autocorrect="off" spellcheck="false">
+            </div>
+
+            <div class="range-grid" style="margin-top:16px;">
+              <div class="range-row">
+                <span class="range-label">Temperature alert (°C)</span>
+                <input type="number" id="notif-temp-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="notif-temp-max" step="any">
+              </div>
+              <div class="range-row">
+                <span class="range-label">Humidity alert (%RH)</span>
+                <input type="number" id="notif-hum-min" step="any">
+                <span class="range-to">to</span>
+                <input type="number" id="notif-hum-max" step="any">
+              </div>
+              <div class="range-row">
+                <span class="range-label">CO alert above (ppm)</span>
+                <input type="number" id="notif-co-max" step="any" style="margin-left:auto;">
+              </div>
+              <div class="range-row">
+                <span class="range-label">Vibration alert above (g)</span>
+                <input type="number" id="notif-vib-max" step="any" style="margin-left:auto;">
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <button class="btn" onclick="saveNotifSettings()">Save notifications</button>
+              <button class="btn" onclick="resetNotifSettings()">Reset to default</button>
+              <button class="btn small" onclick="sendTestNotification()">Send test</button>
+            </div>
+            <div class="settings-status" id="notif-status"></div>
+          </div>
         </div>
       </div>
 
@@ -528,11 +632,144 @@
 </div>
 
 <script>
+  
   const DEFAULT_API_BASE = '';
   let API_BASE = localStorage.getItem('esp32_api_base') || DEFAULT_API_BASE;
 
   let CLOUD_API_KEY = localStorage.getItem('cloud_api_key') || '';
   const POLL_MS = 3000;
+
+  const DEFAULT_CHART_RANGES = {
+    temp: {min:0, max:40},
+    hum:  {min:0, max:100},
+    co:   {min:0, max:150},
+    vib:  {min:0, max:1},
+  };
+  let CHART_RANGES = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('chart_ranges'));
+      return saved ? {...DEFAULT_CHART_RANGES, ...saved} : {...DEFAULT_CHART_RANGES};
+    } catch { return {...DEFAULT_CHART_RANGES}; }
+  })();
+
+  //  Notifications (thresholds, browser pop-ups, Telegram)
+  const DEFAULT_NOTIF_THRESHOLDS = {
+    tempMin: 20, tempMax: 26,  // matches the indoor-comfort band used elsewhere
+    humMin: 30, humMax: 60,
+    coMax: 100,                // matches the existing CO "Alarm" tier
+    vibMax: 0.3,               // matches the existing vibration "Elevated" tier
+  };
+  const DEFAULT_NOTIF_SETTINGS = {
+    browserEnabled: false,
+    telegramEnabled: false,
+    telegramToken: '',
+    telegramChatId: '',
+    thresholds: {...DEFAULT_NOTIF_THRESHOLDS},
+  };
+  let NOTIF_SETTINGS = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('notif_settings'));
+      if (!saved) return structuredCloneSafe(DEFAULT_NOTIF_SETTINGS);
+      return {
+        ...structuredCloneSafe(DEFAULT_NOTIF_SETTINGS),
+        ...saved,
+        thresholds: {...DEFAULT_NOTIF_THRESHOLDS, ...(saved.thresholds || {})},
+      };
+    } catch { return structuredCloneSafe(DEFAULT_NOTIF_SETTINGS); }
+  })();
+  function structuredCloneSafe(o){ return JSON.parse(JSON.stringify(o)); }
+
+
+  let notifAlertState = { temp:false, hum:false, co:false, vib:false };
+
+  async function sendBrowserNotification(title, body){
+    if (!NOTIF_SETTINGS.browserEnabled) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, { body, icon: 'icon-192.png' });
+        return;
+      } catch (err) { /* fall through to the direct constructor below */ }
+    }
+    try { new Notification(title, { body }); } catch (err) { console.warn('Notification failed:', err); }
+  }
+
+  async function sendTelegramNotification(text){
+    if (!NOTIF_SETTINGS.telegramEnabled) return;
+    const token = NOTIF_SETTINGS.telegramToken.trim();
+    const chatId = NOTIF_SETTINGS.telegramChatId.trim();
+    if (!token || !chatId) return;
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text }),
+      });
+    } catch (err) {
+      console.warn('Telegram notification failed:', err);
+    }
+  }
+
+  // Sends email via EmailJS (emailjs.com free tier) - kept commented
+  // out for now, simplified while we focus on browser + Telegram.
+  // Uncomment and re-add the email fields in Settings to bring it back:
+  //
+  // async function sendEmailNotification(subject, message){
+  //   if (!NOTIF_SETTINGS.emailEnabled) return;
+  //   const { emailServiceId, emailTemplateId, emailPublicKey, emailToAddress } = NOTIF_SETTINGS;
+  //   if (!emailServiceId || !emailTemplateId || !emailPublicKey || !emailToAddress) return;
+  //   try {
+  //     await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         service_id: emailServiceId,
+  //         template_id: emailTemplateId,
+  //         user_id: emailPublicKey,
+  //         template_params: { to_email: emailToAddress, subject, message },
+  //       }),
+  //     });
+  //   } catch (err) {
+  //     console.warn('Email notification failed:', err);
+  //   }
+  // }
+
+  function fireAlert(title, body){
+    sendBrowserNotification(title, body);
+    sendTelegramNotification(`${title}\n${body}`);
+  }
+
+  // Edge-triggered threshold check
+  function checkNotificationThresholds(env, gas, imu){
+    const t = NOTIF_SETTINGS.thresholds;
+
+    if (env && env.available) {
+      const tempAlert = env.tempC < t.tempMin || env.tempC > t.tempMax;
+      if (tempAlert && !notifAlertState.temp) fireAlert('Temperature alert', `${env.tempC.toFixed(1)}°C is outside ${t.tempMin}–${t.tempMax}°C`);
+      else if (!tempAlert && notifAlertState.temp) fireAlert('Temperature back to normal', `${env.tempC.toFixed(1)}°C`);
+      notifAlertState.temp = tempAlert;
+
+      const humAlert = env.humidity < t.humMin || env.humidity > t.humMax;
+      if (humAlert && !notifAlertState.hum) fireAlert('Humidity alert', `${env.humidity.toFixed(1)}%RH is outside ${t.humMin}–${t.humMax}%`);
+      else if (!humAlert && notifAlertState.hum) fireAlert('Humidity back to normal', `${env.humidity.toFixed(1)}%RH`);
+      notifAlertState.hum = humAlert;
+    }
+
+    if (gas) {
+      const coAlert = gas.coPpmEstimate > t.coMax;
+      if (coAlert && !notifAlertState.co) fireAlert('CO level alert', `${gas.coPpmEstimate.toFixed(0)} ppm exceeds ${t.coMax} ppm (uncalibrated estimate)`);
+      else if (!coAlert && notifAlertState.co) fireAlert('CO level back to normal', `${gas.coPpmEstimate.toFixed(0)} ppm`);
+      notifAlertState.co = coAlert;
+    }
+
+    if (imu && imu.available) {
+      const vibAlert = imu.vibrationG > t.vibMax;
+      if (vibAlert && !notifAlertState.vib) fireAlert('Vibration alert', `${imu.vibrationG.toFixed(2)}g exceeds ${t.vibMax}g`);
+      else if (!vibAlert && notifAlertState.vib) fireAlert('Vibration back to normal', `${imu.vibrationG.toFixed(2)}g`);
+      notifAlertState.vib = vibAlert;
+    }
+  }
 
   const titles = {
     overview:{t:"Overview", s:"Node 01"},
@@ -562,7 +799,130 @@
       document.getElementById('settings-api-input').value = API_BASE;
       document.getElementById('settings-key-input').value = CLOUD_API_KEY;
       document.getElementById('settings-status').textContent = '';
+      populateRangeFields();
+      document.getElementById('range-status').textContent = '';
+      populateNotifFields();
+      document.getElementById('notif-status').textContent = '';
     }
+  }
+
+  function populateNotifFields(){
+    document.getElementById('notif-browser-enabled').checked = NOTIF_SETTINGS.browserEnabled;
+    document.getElementById('notif-telegram-enabled').checked = NOTIF_SETTINGS.telegramEnabled;
+    document.getElementById('notif-telegram-token').value = NOTIF_SETTINGS.telegramToken;
+    document.getElementById('notif-telegram-chatid').value = NOTIF_SETTINGS.telegramChatId;
+    document.getElementById('notif-temp-min').value = NOTIF_SETTINGS.thresholds.tempMin;
+    document.getElementById('notif-temp-max').value = NOTIF_SETTINGS.thresholds.tempMax;
+    document.getElementById('notif-hum-min').value = NOTIF_SETTINGS.thresholds.humMin;
+    document.getElementById('notif-hum-max').value = NOTIF_SETTINGS.thresholds.humMax;
+    document.getElementById('notif-co-max').value = NOTIF_SETTINGS.thresholds.coMax;
+    document.getElementById('notif-vib-max').value = NOTIF_SETTINGS.thresholds.vibMax;
+  }
+
+  function saveNotifSettings(){
+    const statusEl = document.getElementById('notif-status');
+    const read = (id) => parseFloat(document.getElementById(id).value);
+    const tempMin = read('notif-temp-min'), tempMax = read('notif-temp-max');
+    const humMin = read('notif-hum-min'), humMax = read('notif-hum-max');
+    const coMax = read('notif-co-max'), vibMax = read('notif-vib-max');
+    if ([tempMin,tempMax,humMin,humMax,coMax,vibMax].some(isNaN) || tempMin >= tempMax || humMin >= humMax) {
+      statusEl.textContent = 'Check the threshold values — each min must be less than its max.';
+      return;
+    }
+
+    const browserEnabled = document.getElementById('notif-browser-enabled').checked;
+    if (browserEnabled && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then((perm) => {
+        if (perm !== 'granted') statusEl.textContent = 'Saved, but pop-up notifications were not allowed — check your browser\'s site permissions.';
+      });
+    }
+
+    NOTIF_SETTINGS = {
+      browserEnabled,
+      telegramEnabled: document.getElementById('notif-telegram-enabled').checked,
+      telegramToken: document.getElementById('notif-telegram-token').value.trim(),
+      telegramChatId: document.getElementById('notif-telegram-chatid').value.trim(),
+      thresholds: { tempMin, tempMax, humMin, humMax, coMax, vibMax },
+    };
+    localStorage.setItem('notif_settings', JSON.stringify(NOTIF_SETTINGS));
+    notifAlertState = { temp:false, hum:false, co:false, vib:false }; // re-arm so a currently-out-of-range value re-alerts under the new thresholds
+    if (statusEl.textContent === '') statusEl.textContent = 'Saved.';
+  }
+
+  function resetNotifSettings(){
+    NOTIF_SETTINGS = structuredCloneSafe(DEFAULT_NOTIF_SETTINGS);
+    localStorage.removeItem('notif_settings');
+    populateNotifFields();
+    notifAlertState = { temp:false, hum:false, co:false, vib:false };
+    document.getElementById('notif-status').textContent = 'Reset to defaults.';
+  }
+
+  async function sendTestNotification(){
+    const statusEl = document.getElementById('notif-status');
+    statusEl.textContent = 'Sending test…';
+    let sentAny = false;
+    if (NOTIF_SETTINGS.browserEnabled && 'Notification' in window && Notification.permission === 'granted') {
+      await sendBrowserNotification('Test notification', 'This is a test from your sensor dashboard.');
+      sentAny = true;
+    }
+    if (NOTIF_SETTINGS.telegramEnabled && NOTIF_SETTINGS.telegramToken && NOTIF_SETTINGS.telegramChatId) {
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${NOTIF_SETTINGS.telegramToken.trim()}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: NOTIF_SETTINGS.telegramChatId.trim(), text: 'Test notification from your sensor dashboard.' }),
+        });
+        const body = await res.json();
+        if (!body.ok) { statusEl.textContent = `Telegram error: ${body.description || 'unknown error'}`; return; }
+        sentAny = true;
+      } catch (err) {
+        statusEl.textContent = 'Telegram request failed — check your connection.';
+        return;
+      }
+    }
+    statusEl.textContent = sentAny ? 'Test sent.' : 'Enable and configure at least one channel first.';
+  }
+
+  function populateRangeFields(){
+    document.getElementById('range-temp-min').value = CHART_RANGES.temp.min;
+    document.getElementById('range-temp-max').value = CHART_RANGES.temp.max;
+    document.getElementById('range-hum-min').value = CHART_RANGES.hum.min;
+    document.getElementById('range-hum-max').value = CHART_RANGES.hum.max;
+    document.getElementById('range-co-min').value = CHART_RANGES.co.min;
+    document.getElementById('range-co-max').value = CHART_RANGES.co.max;
+    document.getElementById('range-vib-min').value = CHART_RANGES.vib.min;
+    document.getElementById('range-vib-max').value = CHART_RANGES.vib.max;
+  }
+
+  function saveChartRanges(){
+    const statusEl = document.getElementById('range-status');
+    const read = (id) => parseFloat(document.getElementById(id).value);
+    const pairs = [
+      ['temp', read('range-temp-min'), read('range-temp-max')],
+      ['hum',  read('range-hum-min'),  read('range-hum-max')],
+      ['co',   read('range-co-min'),   read('range-co-max')],
+      ['vib',  read('range-vib-min'),  read('range-vib-max')],
+    ];
+    for (const [key, min, max] of pairs) {
+      if (isNaN(min) || isNaN(max) || min >= max) {
+        statusEl.textContent = 'Each min must be a number less than its max.';
+        return;
+      }
+    }
+    const next = {};
+    for (const [key, min, max] of pairs) next[key] = {min, max};
+    CHART_RANGES = next;
+    localStorage.setItem('chart_ranges', JSON.stringify(CHART_RANGES));
+    statusEl.textContent = 'Saved.';
+    loadHistory();
+  }
+
+  function resetChartRanges(){
+    CHART_RANGES = {...DEFAULT_CHART_RANGES};
+    localStorage.removeItem('chart_ranges');
+    populateRangeFields();
+    document.getElementById('range-status').textContent = 'Reset to defaults.';
+    loadHistory();
   }
 
   function applyNewApiBase(newBase){
@@ -615,7 +975,7 @@
   function applyData(data){
     const env = data.env, imu = data.imu, gas = data.gas, dev = data.device;
 
-    // Climate
+    // Climate 
     if (env.available){
       document.getElementById('ov-temp').innerHTML = env.tempC.toFixed(1) + '<span class="unit">°C</span>';
       document.getElementById('ov-hum').innerHTML = env.humidity.toFixed(1) + '<span class="unit">%RH</span>';
@@ -623,12 +983,18 @@
       document.getElementById('cl-hum').textContent = env.humidity.toFixed(1) + ' %RH';
       document.getElementById('cl-pres').textContent = env.pressureHpa.toFixed(1) + ' hPa';
       document.getElementById('cl-desc').textContent = 'BME280 · live';
-      setStatus(document.getElementById('ov-climate-dot'), document.getElementById('ov-climate-status'), 'normal', 'Normal');
-      setStatus(null, document.getElementById('cl-status'), 'normal', 'Normal');
 
-      const humLevel = (env.humidity >= 70 || env.humidity <= 20) ? 'warn' : 'normal';
-      const humLabel = humLevel === 'warn' ? (env.humidity >= 70 ? 'High' : 'Low') : 'Normal';
-      document.getElementById('ov-hum-note').textContent = humLevel === 'warn' ? 'Outside 20–70% range' : 'Relative humidity';
+      const tempLevel = (env.tempC < 20 || env.tempC > 26) ? 'warn' : 'normal';
+      const tempLabel = env.tempC > 26 ? 'Warm' : env.tempC < 20 ? 'Cool' : 'Normal';
+      const humLevel = (env.humidity < 30 || env.humidity > 60) ? 'warn' : 'normal';
+      const humLabel = env.humidity > 60 ? 'High' : env.humidity < 30 ? 'Low' : 'Normal';
+
+      const climateLevel = (tempLevel === 'warn' || humLevel === 'warn') ? 'warn' : 'normal';
+      const climateLabel = climateLevel === 'normal' ? 'Normal' : (tempLevel === 'warn' ? tempLabel : humLabel);
+      setStatus(document.getElementById('ov-climate-dot'), document.getElementById('ov-climate-status'), climateLevel, climateLabel);
+      setStatus(null, document.getElementById('cl-status'), climateLevel, climateLabel);
+
+      document.getElementById('ov-hum-note').textContent = humLevel === 'normal' ? 'Relative humidity' : 'Outside 30–60% indoor comfort range';
       setStatus(document.getElementById('ov-hum-dot'), document.getElementById('ov-hum-status'), humLevel, humLabel);
     } else {
       document.getElementById('cl-desc').textContent = 'BME280 not found on this node';
@@ -687,6 +1053,8 @@
     statusPill.className = 'pill ok';
     statusPill.innerHTML = '<span class="pulse"></span>Online';
     document.getElementById('d-updated-pill').textContent = 'Updated just now';
+
+    checkNotificationThresholds(env, gas, imu);
   }
 
   function setOffline(){
@@ -728,7 +1096,7 @@
   histTooltip.style.display = 'none';
   document.body.appendChild(histTooltip);
 
-  function drawLineChart(canvas, rows, field, color){
+  function drawLineChart(canvas, rows, field, color, fixedRange){
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth || 600, h = canvas.clientHeight || 150;
     canvas.width = w * dpr; canvas.height = h * dpr;
@@ -740,6 +1108,7 @@
     const axisPad = 16; // extra bottom room for the time labels
     const pad = 8;
 
+    // Stash for the shared hover handler below.
     canvas._chartRows = rows;
     canvas._chartField = field;
     canvas._chartLayout = { w, h, pad, axisPad };
@@ -750,7 +1119,8 @@
       return;
     }
 
-    const min = Math.min(...points), max = Math.max(...points);
+    const min = fixedRange ? fixedRange.min : Math.min(...points);
+    const max = fixedRange ? fixedRange.max : Math.max(...points);
     const range = (max - min) || 1;
     const plotH = h - pad - axisPad;
     const stepX = (w - pad*2) / Math.max(points.length - 1, 1);
@@ -764,7 +1134,8 @@
     ctx.beginPath();
     points.forEach((v,i)=>{
       const x = pad + i*stepX;
-      const y = pad + plotH * (1 - (v - min)/range);
+      const ratio = Math.max(0, Math.min(1, (v - min) / range)); // clamp so an out-of-range spike doesn't draw off-canvas
+      const y = pad + plotH * (1 - ratio);
       if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     });
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
@@ -824,10 +1195,10 @@
       if (!res.ok) throw new Error('bad response');
       const data = await res.json();
       const rows = data.rows || [];
-      drawLineChart(document.getElementById('chart-temp'), rows, 'tempC', '#065A82');
-      drawLineChart(document.getElementById('chart-hum'), rows, 'humidity', '#2E9CCA');
-      drawLineChart(document.getElementById('chart-co'), rows, 'coPpm', '#E8A33D');
-      drawLineChart(document.getElementById('chart-vib'), rows, 'vibrationG', '#02C39A');
+      drawLineChart(document.getElementById('chart-temp'), rows, 'tempC', '#065A82', CHART_RANGES.temp);
+      drawLineChart(document.getElementById('chart-hum'), rows, 'humidity', '#2E9CCA', CHART_RANGES.hum);
+      drawLineChart(document.getElementById('chart-co'), rows, 'coPpm', '#E8A33D', CHART_RANGES.co);
+      drawLineChart(document.getElementById('chart-vib'), rows, 'vibrationG', '#02C39A', CHART_RANGES.vib);
       const lastTs = rows.length ? formatTs(rows[rows.length-1].ts) : null;
       statusEl.textContent = rows.length
         ? `${rows.length} logged reading(s) · oldest first · last logged ${lastTs}`
@@ -850,6 +1221,16 @@
 
   setInterval(refreshData, POLL_MS);
   refreshData();
+</script>
+
+<script>
+  // Registers the service worker - primarily so pop-up notifications
+  // work correctly on mobile browsers (see sendBrowserNotification).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+  }
 </script>
 
 </body>
