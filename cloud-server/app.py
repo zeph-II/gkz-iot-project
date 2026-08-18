@@ -1,15 +1,14 @@
 import os
 import sqlite3
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, Response
+
+from flask import Flask, request, jsonify, Response, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # lets the GitHub Pages dashboards call this from a different origin
+CORS(app)
 
 DB_PATH = os.environ.get("DB_PATH", "readings.db")
-# Set this in Render's Environment Variables tab - must match the value
-# flashed into the ESP32 firmware and used by the dashboards.
 API_KEY = os.environ.get("API_KEY", "changeme")
 
 
@@ -43,8 +42,7 @@ def init_db():
 
 init_db()
 
-# Most recent reading, kept in memory so /api/sensors is instant and
-# doesn't need a DB round-trip for the common "give me live data" case.
+# Most recent reading is kept in memory for fast dashboard updates.
 latest = {}
 
 
@@ -56,17 +54,23 @@ def check_key():
 
 @app.route("/api/ingest", methods=["POST"])
 def ingest():
-    """The ESP32 calls this every ~60s to push a new reading. Requires
-    the API key since it's the one endpoint that writes data."""
+    """Receive a new reading from the ESP32."""
     if not check_key():
         return jsonify({"error": "unauthorized"}), 401
+
     data = request.get_json(force=True, silent=True) or {}
+
     global latest
     latest = data
+
     conn = get_db()
     conn.execute(
-        "INSERT INTO readings (ts, tempC, humidity, pressureHpa, coPpm, voltageV, vibrationG, uptimeS, received_at) "
-        "VALUES (?,?,?,?,?,?,?,?,?)",
+        """
+        INSERT INTO readings
+        (ts, tempC, humidity, pressureHpa, coPpm, voltageV, vibrationG,
+         uptimeS, received_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
         (
             data.get("ts", ""),
             data.get("tempC"),
@@ -81,6 +85,7 @@ def ingest():
     )
     conn.commit()
     conn.close()
+
     return jsonify({"ok": True})
 
 
@@ -88,6 +93,7 @@ def ingest():
 def sensors():
     if not check_key():
         return jsonify({"error": "unauthorized"}), 401
+
     return jsonify(
         {
             "env": {
@@ -96,10 +102,24 @@ def sensors():
                 "humidity": latest.get("humidity"),
                 "pressureHpa": latest.get("pressureHpa"),
             },
-            "gas": {"coPpmEstimate": latest.get("coPpm"), "voltageV": latest.get("voltageV")},
-            "imu": {"available": "vibrationG" in latest, "vibrationG": latest.get("vibrationG")},
-            "device": {"uptimeS": latest.get("uptimeS")},
-            "time": {"available": bool(latest.get("ts")), "iso": latest.get("ts", "")},
+            "gas": {
+                "coPpmEstimate": latest.get("coPpm"),
+                "voltageV": latest.get("voltageV"),
+            },
+            "imu": {
+                "available": "vibrationG" in latest,
+                "vibrationG": latest.get("vibrationG"),
+            },
+            "device": {
+                "uptimeS": latest.get("uptimeS"),
+                "ip": latest.get("ip", ""),
+                "wifiRssiDbm": latest.get("wifiRssiDbm"),
+                "freeHeapBytes": latest.get("freeHeapBytes"),
+            },
+            "time": {
+                "available": bool(latest.get("ts")),
+                "iso": latest.get("ts", ""),
+            },
         }
     )
 
@@ -108,14 +128,21 @@ def sensors():
 def history():
     if not check_key():
         return jsonify({"error": "unauthorized"}), 401
+
     limit = request.args.get("limit", type=int)
+
     conn = get_db()
     if limit:
-        rows = conn.execute("SELECT * FROM readings ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM readings ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
         rows = list(reversed(rows))
     else:
-        rows = conn.execute("SELECT * FROM readings ORDER BY id ASC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM readings ORDER BY id ASC"
+        ).fetchall()
     conn.close()
+
     result = [
         {
             "ts": r["ts"],
@@ -129,6 +156,7 @@ def history():
         }
         for r in rows
     ]
+
     return jsonify({"count": len(result), "rows": result})
 
 
@@ -136,18 +164,30 @@ def history():
 def history_csv():
     if not check_key():
         return jsonify({"error": "unauthorized"}), 401
+
     conn = get_db()
-    rows = conn.execute("SELECT * FROM readings ORDER BY id ASC").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM readings ORDER BY id ASC"
+    ).fetchall()
     conn.close()
-    lines = ["ts,tempC,humidity,pressureHpa,coPpm,voltageV,vibrationG,uptimeS"]
+
+    lines = [
+        "ts,tempC,humidity,pressureHpa,coPpm,voltageV,vibrationG,uptimeS"
+    ]
+
     for r in rows:
         lines.append(
-            f'{r["ts"]},{r["tempC"]},{r["humidity"]},{r["pressureHpa"]},{r["coPpm"]},{r["voltageV"]},{r["vibrationG"]},{r["uptimeS"]}'
+            f'{r["ts"]},{r["tempC"]},{r["humidity"]},'
+            f'{r["pressureHpa"]},{r["coPpm"]},{r["voltageV"]},'
+            f'{r["vibrationG"]},{r["uptimeS"]}'
         )
+
     return Response(
         "\n".join(lines),
         mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=history.csv"},
+        headers={
+            "Content-Disposition": "attachment; filename=history.csv"
+        },
     )
 
 
@@ -155,19 +195,27 @@ def history_csv():
 def history_clear():
     if not check_key():
         return jsonify({"error": "unauthorized"}), 401
+
     conn = get_db()
     conn.execute("DELETE FROM readings")
     conn.commit()
     conn.close()
+
     global latest
     latest = {}
+
     return jsonify({"ok": True})
 
 
 @app.route("/", methods=["GET"])
 def index():
-    return jsonify({"status": "ok", "service": "IoT sensor cloud relay"})
+    # Serve the dashboard directly from Flask.
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG", "0") == "1",
+    )
